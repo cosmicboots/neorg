@@ -25,6 +25,26 @@ require("neorg.modules.base")
 local module = neorg.modules.create("core.norg.journal")
 local log = require("neorg.external.log")
 
+
+--- Preform substitutions for a template file.
+--- Right now this just supports {DATE} and {FULLDATE}
+--- @param filename string #The filename to the template file that will have substitutions
+local function sub_file(filename)
+    local lines = {}
+    for line in io.lines(filename) do
+        lines[#lines+1] = (line:gsub("%S+", function(word)
+            if word:match("{DATE}") then
+                return os.date("%Y-%m-%d")
+            elseif word:match("{FULLDATE}") then
+                return os.date("%A, %B %d, %Y")
+            else
+                return word
+            end
+        end))
+    end
+    return lines
+end
+
 module.examples = {
     ["Changing TOC format to divide year in quarters"] = function()
         -- In your ["core.norg.journal"] options, change toc_format to a function like this:
@@ -147,7 +167,11 @@ module.private = {
                 workspace_path .. "/" .. folder_name .. "/" .. template_name
             )
         then
-            vim.cmd("0read " .. workspace_path .. "/" .. folder_name .. "/" .. template_name .. "| w")
+            --vim.cmd("0read " .. workspace_path .. "/" .. folder_name .. "/" .. template_name .. "| w")
+            vim.api.nvim_put(sub_file(workspace_path .. "/" .. folder_name .. "/" .. template_name),
+                "c",
+                false,
+                true)
         end
     end,
 
